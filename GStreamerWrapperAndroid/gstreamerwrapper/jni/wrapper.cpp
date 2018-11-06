@@ -239,8 +239,13 @@ namespace
                     auto dst = data->VideoBuffer;
                     for(auto y = 0; y < videoInfo.height; y++)
                     {
-                        memcpy(dst, src, videoInfo.width);
-                        dst += videoInfo.width;
+                        for(auto x=0; x < videoInfo.width; x++)
+                        {
+                            dst[x * 3] = src[x];
+                        }
+
+                        //memcpy(dst, src, videoInfo.width);
+                        dst += videoInfo.width * 3;
                         src += videoInfo.stride[0];
                     }
 
@@ -248,13 +253,23 @@ namespace
                     for(auto y = 0; y < videoInfo.height / 2; y++)
                     {
                         //v
-                        memcpy(dst, src, videoInfo.width / 2);
-                        dst += videoInfo.width / 2;
+                        for(auto x=0; x < videoInfo.width / 2; x++)
+                        {
+                            dst[x * 3] = src[x];
+                        }
+
+                        //memcpy(dst, src, videoInfo.width / 2);
+                        dst += videoInfo.width / 2 * 3;
                         src += videoInfo.stride[1];
 
                         //u
-                        memcpy(dst, src, videoInfo.width / 2);
-                        dst += videoInfo.width / 2;
+                        for(auto x=0; x < videoInfo.width / 2; x++)
+                        {
+                            dst[x * 3] = src[x];
+                        }
+
+                        //memcpy(dst, src, videoInfo.width / 2);
+                        dst += videoInfo.width / 2 * 3;
                         src += videoInfo.stride[2];
                     }
 
@@ -669,7 +684,7 @@ extern "C"
 
         data->Width = width;
         data->Height = height;
-        data->VideoBuffer = new unsigned char[width*height];
+        data->VideoBuffer = new unsigned char[width*height*3];//GL_RGB
         data->Texture = (int)reinterpret_cast<long long>(ptr);//static_cast<ID3D11Texture2D*>(ptr);;
 
         std::string logStr = "";
@@ -701,60 +716,8 @@ void glGetTexLevelParameteriv (GLenum target, GLint level, GLenum pname, GLint *
 //            s_device->GetImmediateContext(&context);
 //            context->UpdateSubresource(data->Texture, 0, nullptr, data->VideoBuffer, data->Width, 0);//note: texture pitch is assumed as non exponent of 2 size texture
 
-            GLenum err = glGetError();
-
-            std::string logStr = "";
-            logStr += "start: ";
-            logStr += std::to_string(err);
-
             glBindTexture(GL_TEXTURE_2D, data->Texture);
-            err = glGetError();
-            logStr += "\nglBindTexture: ";
-            logStr += std::to_string(err);
-
-
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            err = glGetError();
-            logStr += "\nglTexParameterf: ";
-            logStr += std::to_string(err);
-
-
-            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            err = glGetError();
-            logStr += "\nglTexParameterf: ";
-            logStr += std::to_string(err);
-
-
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            err = glGetError();
-            logStr += "\nglPixelStorei: ";
-            logStr += std::to_string(err);
-
-            int texWidth, texHeight;
-
-            //#define GL_TEXTURE_WIDTH                  0x1000
-            //#define GL_TEXTURE_HEIGHT                 0x1001
-            glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, 0x1000, &texWidth);
-            glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, 0x1001, &texHeight);
-            logStr += "\nWidth: ";
-            logStr += std::to_string(texWidth);
-            logStr += "\nHeight: ";
-            logStr += std::to_string(texHeight);
-
-            logStr += "\nWidthUnity: ";
-            logStr += std::to_string(data->Width);
-            logStr += "\nHeightUnity: ";
-            logStr += std::to_string(data->Height);
-
-            int texFormat;
-            //#define GL_TEXTURE_INTERNAL_FORMAT        0x1003
-            glGetTexLevelParameteriv (GL_TEXTURE_2D, 0, 0x1003, &texFormat);
-            logStr += "\nFormat: ";
-            logStr += std::to_string(texFormat);
-
-            //RGBA8_EXT                        0x8058
-                    //R8                      0x8229
-//#define GL_RGBA                           0x1908
 
             glTexSubImage2D
                     (
@@ -763,25 +726,12 @@ void glGetTexLevelParameteriv (GLenum target, GLint level, GLenum pname, GLint *
                             0,
                             0,
                             data->Width,
-                            data->Height/4,
-                            0x1908,//#define GL_RED                            0x1903 #define GL_ALPHA                          0x1906
-                            0x1401,//#define GL_UNSIGNED_BYTE                  0x1401
+                            data->Height,
+                            GL_RGB,
+                            GL_UNSIGNED_BYTE,
                             data->VideoBuffer
                     );
-
-            err = glGetError();
-            logStr += "\nglTexSubImage2D: ";
-            logStr += std::to_string(err);
-
             glBindTexture(GL_TEXTURE_2D, 0);
-
-            err = glGetError();
-            logStr += "\nglBindTexture: ";
-            logStr += std::to_string(err);
-
-            debug_log(logStr.c_str());
-
-
         }
         return true;
     }

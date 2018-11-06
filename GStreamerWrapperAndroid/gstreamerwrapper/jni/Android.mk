@@ -5,7 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := wrapper
 LOCAL_SRC_FILES := wrapper.cpp debug.cpp
 LOCAL_SHARED_LIBRARIES := gstreamer_android
-LOCAL_LDLIBS := -llog -landroid -lGLESv1_CM -lGLESv2 -lGLESv3
+LOCAL_LDLIBS := -llog -landroid -lGLESv1_CM -lGLESv2 #-lGLESv3
 include $(BUILD_SHARED_LIBRARY)
 
 ifndef GSTREAMER_ROOT_ANDROID
