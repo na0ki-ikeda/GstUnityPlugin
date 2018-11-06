@@ -79,7 +79,7 @@ public class AndroidPlugin : MonoBehaviour
         var actualHeight = height * 3 / 2;//for I420 YUV
 
         //テクスチャの作成
-        texture_ = new Texture2D(actualWidth, actualHeight, TextureFormat.ARGB32, false);
+        texture_ = new Texture2D(actualWidth, actualHeight, TextureFormat.RGB24, false, false);
 
         //設定
         GetComponent<Renderer>().material.mainTexture = texture_;

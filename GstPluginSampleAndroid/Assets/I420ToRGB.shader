@@ -40,7 +40,7 @@
 				half2 texSize=half2(1,1/1.5);
 				
 				// lookup Y
-				yuv.r = tex2D(_MainTex, texcoord).a;
+				yuv.r = tex2D(_MainTex, texcoord).r;
 				//return float4(yuv.r,yuv.r,yuv.r,1);
 				
 				// lookup U
@@ -52,10 +52,10 @@
 					texcoord.x += (texSize.x/2.0);
 				}
 				texcoord.y = texSize.y+(texcoord.y/4.0);
-				yuv.g = tex2D(_MainTex, texcoord.xy).a;
+				yuv.g = tex2D(_MainTex, texcoord.xy).r;
 				// lookup V
 				texcoord.y += texSize.y/4.0;
-				yuv.b = tex2D(_MainTex, texcoord.xy).a;
+				yuv.b = tex2D(_MainTex, texcoord.xy).r;
 
 				// Convert
 				yuv += half3(-0.0625, -0.5, -0.5);
