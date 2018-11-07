@@ -17,7 +17,7 @@ extern "C" void debug_log(const char* msg);
 #include <vector>
 #include <thread>
 #include <mutex>
-
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -56,7 +56,7 @@ namespace
         std::thread* Thread;
 
         //video
-        int Texture;
+        unsigned int Texture;
         int Width;
         int Height;
         unsigned char* VideoBuffer;
@@ -239,13 +239,8 @@ namespace
                     auto dst = data->VideoBuffer;
                     for(auto y = 0; y < videoInfo.height; y++)
                     {
-                        for(auto x=0; x < videoInfo.width; x++)
-                        {
-                            dst[x * 3] = src[x];
-                        }
-
-                        //memcpy(dst, src, videoInfo.width);
-                        dst += videoInfo.width * 3;
+                        memcpy(dst, src, videoInfo.width);
+                        dst += videoInfo.width;
                         src += videoInfo.stride[0];
                     }
 
@@ -253,23 +248,13 @@ namespace
                     for(auto y = 0; y < videoInfo.height / 2; y++)
                     {
                         //v
-                        for(auto x=0; x < videoInfo.width / 2; x++)
-                        {
-                            dst[x * 3] = src[x];
-                        }
-
-                        //memcpy(dst, src, videoInfo.width / 2);
-                        dst += videoInfo.width / 2 * 3;
+                        memcpy(dst, src, videoInfo.width / 2);
+                        dst += videoInfo.width / 2;
                         src += videoInfo.stride[1];
 
                         //u
-                        for(auto x=0; x < videoInfo.width / 2; x++)
-                        {
-                            dst[x * 3] = src[x];
-                        }
-
-                        //memcpy(dst, src, videoInfo.width / 2);
-                        dst += videoInfo.width / 2 * 3;
+                        memcpy(dst, src, videoInfo.width / 2);
+                        dst += videoInfo.width / 2;
                         src += videoInfo.stride[2];
                     }
 
@@ -675,30 +660,34 @@ extern "C"
         return true;
     }
 
-    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API SetTexture(const int id, int width, int height, void* ptr)
+#include <GLES/gl.h>
+#include <GLES2/gl2.h>
+
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API SetVideoInfo(const int id, int width, int height)
     {
         if(!s_Initialized) return false;
 
         auto data = GetCustomData(id);
         if(data == nullptr) return false;
 
+        //set parameters
         data->Width = width;
         data->Height = height;
-        data->VideoBuffer = new unsigned char[width*height*3];//GL_RGB
-        data->Texture = (int)reinterpret_cast<long long>(ptr);//static_cast<ID3D11Texture2D*>(ptr);;
-
-        std::string logStr = "";
-        logStr += "Texture ID: ";
-        logStr += std::to_string(data->Texture);
-
-        debug_log(logStr.c_str());
+        data->VideoBuffer = new unsigned char[width*height];//GL_ALPHA
+        memset(data->VideoBuffer, 0, width*height);
 
         return true;
     }
 
-#include <GLES/gl.h>
-#include <GLES2/gl2.h>
-void glGetTexLevelParameteriv (GLenum target, GLint level, GLenum pname, GLint *params);
+    UNITY_INTERFACE_EXPORT void* UNITY_INTERFACE_API GetTexturePtr(const int id)
+    {
+        if(!s_Initialized) return nullptr;
+
+        auto data = GetCustomData(id);
+        if(data == nullptr) return nullptr;
+
+        return reinterpret_cast<void*>(data->Texture);
+    }
 
     UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API UpdateTexture(const int id)
     {
@@ -716,22 +705,39 @@ void glGetTexLevelParameteriv (GLenum target, GLint level, GLenum pname, GLint *
 //            s_device->GetImmediateContext(&context);
 //            context->UpdateSubresource(data->Texture, 0, nullptr, data->VideoBuffer, data->Width, 0);//note: texture pitch is assumed as non exponent of 2 size texture
 
-            glBindTexture(GL_TEXTURE_2D, data->Texture);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            if(data->Texture == 0)
+            {
+                //check buffer
+                if(data->VideoBuffer != nullptr)
+                {
+                    //generate texture
+                    glGenTextures(1, &data->Texture);
 
-            glTexSubImage2D
-                    (
-                            GL_TEXTURE_2D,
-                            0,
-                            0,
-                            0,
-                            data->Width,
-                            data->Height,
-                            GL_RGB,
-                            GL_UNSIGNED_BYTE,
-                            data->VideoBuffer
-                    );
-            glBindTexture(GL_TEXTURE_2D, 0);
+                    //set GL_ALPHA format
+                    glBindTexture(GL_TEXTURE_2D, data->Texture);
+                    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, data->Width, data->Height, 0, GL_ALPHA,
+                                 GL_UNSIGNED_BYTE, data->VideoBuffer);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
+            }else{
+                glBindTexture(GL_TEXTURE_2D, data->Texture);
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glTexSubImage2D
+                        (
+                                GL_TEXTURE_2D,
+                                0,
+                                0,
+                                0,
+                                data->Width,
+                                data->Height,
+                                GL_ALPHA,
+                                GL_UNSIGNED_BYTE,
+                                data->VideoBuffer
+                        );
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
         }
         return true;
     }
