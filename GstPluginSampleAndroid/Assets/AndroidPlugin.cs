@@ -16,7 +16,10 @@ public class AndroidPlugin : MonoBehaviour
 
     [DllImport("wrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
-    static extern bool SetTexture(int id, int width, int height, IntPtr ptr);
+    static extern bool SetVideoInfo(int id, int width, int height);
+
+    [DllImport("wrapper")]
+    static extern IntPtr GetTexturePtr(int id);
 
     [DllImport("wrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
@@ -55,6 +58,9 @@ public class AndroidPlugin : MonoBehaviour
     [SerializeField]
     float audioDeadLineTime_ = 0;
 
+    [SerializeField]
+    bool textureUpdated_ = false;
+
     // Use this for initialization
     void Start()
     {
@@ -79,7 +85,7 @@ public class AndroidPlugin : MonoBehaviour
         var actualHeight = height * 3 / 2;//for I420 YUV
 
         //テクスチャの作成
-        texture_ = new Texture2D(actualWidth, actualHeight, TextureFormat.RGB24, false, false);
+        texture_ = new Texture2D(actualWidth, actualHeight, TextureFormat.Alpha8, false, false);
 
         //設定
         GetComponent<Renderer>().material.mainTexture = texture_;
@@ -103,12 +109,9 @@ public class AndroidPlugin : MonoBehaviour
 
         );
 
-        //テクスチャのセット
-        Debug.Log("Call SetTexture!: " + pipelineId_);
-
-        int textureID = (int)texture_.GetNativeTexturePtr();
-        Debug.Log("Texture id from unity: " + textureID);
-        SetTexture(pipelineId_, actualWidth, actualHeight, texture_.GetNativeTexturePtr());
+        //ビデオ情報
+        Debug.Log("Call SetVideoInfo!: " + pipelineId_);
+        SetVideoInfo(pipelineId_, actualWidth, actualHeight);
 
         //オーディオ情報
         Debug.Log("Call SetAudioInfo!: " + pipelineId_);
@@ -200,6 +203,21 @@ public class AndroidPlugin : MonoBehaviour
 
     void UpdateVideo()
     {
+        if (!textureUpdated_)
+        {
+            var externalTexturePtr = GetTexturePtr(pipelineId_);
+
+            Debug.Log("TextureID!: " + (int)externalTexturePtr);
+
+            //0 check
+            if ((int)externalTexturePtr != 0)
+            {
+                var externalTexture = Texture2D.CreateExternalTexture(texture_.width, texture_.height, TextureFormat.Alpha8, false, false, externalTexturePtr);
+                texture_.UpdateExternalTexture(externalTexture.GetNativeTexturePtr());
+                textureUpdated_ = true;
+            }
+        }
+
         //ざる実装
         GL.IssuePluginEvent(GetRenderEventFunc(), 0);
     }
