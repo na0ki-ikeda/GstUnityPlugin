@@ -75,6 +75,7 @@ public class GStreamerWrapper : MonoBehaviour
 
         //設定
         GetComponent<Renderer>().material.mainTexture = texture_;
+        GetComponent<Renderer>().material.SetFloat("_TextureHeight", actualHeight);
 
         //クリップの作成
         clip_ = AudioClip.Create("clip", 44100, 2, 44100, false);
