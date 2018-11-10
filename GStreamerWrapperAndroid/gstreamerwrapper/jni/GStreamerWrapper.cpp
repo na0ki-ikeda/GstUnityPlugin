@@ -12,13 +12,14 @@ typedef void(*UnityRenderingEvent)(int eventId);
 #endif
 
 extern "C" void debug_log(const char* msg);
+extern "C" bool is_debug_log();
 
 #include <map>
 #include <vector>
 #include <thread>
 #include <mutex>
 #include <chrono>
-#include <iostream>
+//#include <iostream>
 #include <string>
 
 #include <gst/gst.h>
@@ -68,6 +69,7 @@ namespace
         //audio
         std::vector<float> AudioBuffer;
         int Channels;
+        int SampleRate;
         int MaxAudioBufferLength;
 
         CustomData()
@@ -86,7 +88,7 @@ namespace
             Width = Height = 0;
             VideoBuffer = nullptr;
 
-            Channels = 0;
+            Channels = SampleRate = 0;
             MaxAudioBufferLength = 0;
         }
         virtual ~CustomData() {}
@@ -100,8 +102,6 @@ namespace
     static std::mutex s_DataMutex;
     static bool s_Initialized = false;
 
-    static char* s_errorString = nullptr;
-
     CustomData* GetCustomData(const int id)
     {
         if(s_Data.count(id) == 0) return nullptr;
@@ -113,16 +113,18 @@ namespace
     {
         auto* data = reinterpret_cast<CustomData*>(p);
 
-        std::string logStr = "";
-        logStr += "Got message: ";
-        logStr += GST_MESSAGE_TYPE_NAME(msg);
-        if(data)
+        if(is_debug_log())
         {
-            logStr += ", ID: ";
-            logStr += std::to_string(data->ID);
+            std::string logStr = "";
+            logStr += "Got message: ";
+            logStr += GST_MESSAGE_TYPE_NAME(msg);
+            if(data)
+            {
+                logStr += ", ID: ";
+                logStr += std::to_string(data->ID);
+            }
+            debug_log(logStr.c_str());
         }
-        debug_log(logStr.c_str());
-        //std::cout << logStr << std::endl;
 
         switch(GST_MESSAGE_TYPE(msg))
         {
@@ -132,6 +134,7 @@ namespace
                 gchar *debug;
 
                 gst_message_parse_error(msg, &err, &debug);
+
                 debug_log("Error: ");
                 if(err != nullptr) debug_log(err->message);
 
@@ -183,13 +186,99 @@ namespace
         return TRUE;
     }
 
+    const char* GetVideoFormatName(const GstVideoFormat format)
+    {
+        static const char* names[] =
+        {
+            "GST_VIDEO_FORMAT_UNKNOWN",
+            "GST_VIDEO_FORMAT_ENCODED",
+            "GST_VIDEO_FORMAT_I420",
+            "GST_VIDEO_FORMAT_YV12",
+            "GST_VIDEO_FORMAT_YUY2",
+            "GST_VIDEO_FORMAT_UYVY",
+            "GST_VIDEO_FORMAT_AYUV",
+            "GST_VIDEO_FORMAT_RGBx",
+            "GST_VIDEO_FORMAT_BGRx",
+            "GST_VIDEO_FORMAT_xRGB",
+            "GST_VIDEO_FORMAT_xBGR",
+            "GST_VIDEO_FORMAT_RGBA",
+            "GST_VIDEO_FORMAT_BGRA",
+            "GST_VIDEO_FORMAT_ARGB",
+            "GST_VIDEO_FORMAT_ABGR",
+            "GST_VIDEO_FORMAT_RGB",
+            "GST_VIDEO_FORMAT_BGR",
+            "GST_VIDEO_FORMAT_Y41B",
+            "GST_VIDEO_FORMAT_Y42B",
+            "GST_VIDEO_FORMAT_YVYU",
+            "GST_VIDEO_FORMAT_Y444",
+            "GST_VIDEO_FORMAT_v210",
+            "GST_VIDEO_FORMAT_v216",
+            "GST_VIDEO_FORMAT_NV12",
+            "GST_VIDEO_FORMAT_NV21",
+            "GST_VIDEO_FORMAT_GRAY8",
+            "GST_VIDEO_FORMAT_GRAY16_BE",
+            "GST_VIDEO_FORMAT_GRAY16_LE",
+            "GST_VIDEO_FORMAT_v308",
+            "GST_VIDEO_FORMAT_RGB16",
+            "GST_VIDEO_FORMAT_BGR16",
+            "GST_VIDEO_FORMAT_RGB15",
+            "GST_VIDEO_FORMAT_BGR15",
+            "GST_VIDEO_FORMAT_UYVP",
+            "GST_VIDEO_FORMAT_A420",
+            "GST_VIDEO_FORMAT_RGB8P",
+            "GST_VIDEO_FORMAT_YUV9",
+            "GST_VIDEO_FORMAT_YVU9",
+            "GST_VIDEO_FORMAT_IYU1",
+            "GST_VIDEO_FORMAT_ARGB64",
+            "GST_VIDEO_FORMAT_AYUV64",
+            "GST_VIDEO_FORMAT_r210",
+            "GST_VIDEO_FORMAT_I420_10BE",
+            "GST_VIDEO_FORMAT_I420_10LE",
+            "GST_VIDEO_FORMAT_I422_10BE",
+            "GST_VIDEO_FORMAT_I422_10LE",
+            "GST_VIDEO_FORMAT_Y444_10BE",
+            "GST_VIDEO_FORMAT_Y444_10LE",
+            "GST_VIDEO_FORMAT_GBR",
+            "GST_VIDEO_FORMAT_GBR_10BE",
+            "GST_VIDEO_FORMAT_GBR_10LE",
+            "GST_VIDEO_FORMAT_NV16",
+            "GST_VIDEO_FORMAT_NV24",
+            "GST_VIDEO_FORMAT_NV12_64Z32",
+            "GST_VIDEO_FORMAT_A420_10BE",
+            "GST_VIDEO_FORMAT_A420_10LE",
+            "GST_VIDEO_FORMAT_A422_10BE",
+            "GST_VIDEO_FORMAT_A422_10LE",
+            "GST_VIDEO_FORMAT_A444_10BE",
+            "GST_VIDEO_FORMAT_A444_10LE",
+            "GST_VIDEO_FORMAT_NV61",
+            "GST_VIDEO_FORMAT_P010_10BE",
+            "GST_VIDEO_FORMAT_P010_10LE",
+            "GST_VIDEO_FORMAT_IYU2",
+            "GST_VIDEO_FORMAT_VYUY",
+            "GST_VIDEO_FORMAT_GBRA",
+            "GST_VIDEO_FORMAT_GBRA_10BE",
+            "GST_VIDEO_FORMAT_GBRA_10LE",
+            "GST_VIDEO_FORMAT_GBR_12BE",
+            "GST_VIDEO_FORMAT_GBR_12LE",
+            "GST_VIDEO_FORMAT_GBRA_12BE",
+            "GST_VIDEO_FORMAT_GBRA_12LE",
+            "GST_VIDEO_FORMAT_I420_12BE",
+            "GST_VIDEO_FORMAT_I420_12LE",
+            "GST_VIDEO_FORMAT_I422_12BE",
+            "GST_VIDEO_FORMAT_I422_12LE",
+            "GST_VIDEO_FORMAT_Y444_12BE",
+            "GST_VIDEO_FORMAT_Y444_12LE",
+            "GST_VIDEO_FORMAT_GRAY10_LE32",
+            "GST_VIDEO_FORMAT_NV12_10LE32",
+            "GST_VIDEO_FORMAT_NV16_10LE32"
+        };
+
+        return names[format];
+    }
+
     GstFlowReturn NewVideoSampleCallback(GstAppSink *sink, gpointer p)
     {
         auto* data = reinterpret_cast<CustomData*>(p);
-
-        //std::cout << "hello new video sample" << std::endl;
-        //debug_log("hello new video sample");
-
         auto sample = gst_app_sink_pull_sample(sink);
 
         if(sample == nullptr)
@@ -209,19 +298,18 @@ namespace
                 return GST_FLOW_OK;
             }
 
-            //std::cout << "format: " << videoInfo.finfo->format << std::endl;
-            //std::cout << "width: " << videoInfo.width << std::endl;
-            //std::cout << "height: " << videoInfo.height << std::endl;
-
-            //std::cout << "videoInfo.stride[0]: " << videoInfo.stride[0] << std::endl;
-            //std::cout << "videoInfo.stride[1]: " << videoInfo.stride[1] << std::endl;
-            //std::cout << "videoInfo.stride[2]: " << videoInfo.stride[2] << std::endl;
-
-
             //format check
             if(videoInfo.finfo->format != GST_VIDEO_FORMAT_I420)//this assumes pixel size is 1 byte and height is 1.5 times
             {
                 //error!
+                if(is_debug_log())
+                {
+                    std::string logStr = "Video Format Error detected!\n";
+                    logStr += "video format: ";
+                    logStr += GetVideoFormatName(videoInfo.finfo->format);
+                    logStr += "\n";
+                    debug_log(logStr.c_str());
+                }
                 gst_sample_unref(sample);
                 return GST_FLOW_OK;
             }
@@ -230,6 +318,16 @@ namespace
             if(data->Width != videoInfo.width || data->Height != videoInfo.height * 3 / 2)
             {
                 //error!
+                if(is_debug_log())
+                {
+                    std::string logStr = "Video Size(width/height) Error detected!";
+                    logStr += "video width: " + std::to_string(videoInfo.width) + "\n";
+                    logStr += "video height: " + std::to_string(videoInfo.height) + "\n";
+                    logStr += "video stride[0]: " + std::to_string(videoInfo.stride[0]) + "\n";
+                    logStr += "video stride[1]: " + std::to_string(videoInfo.stride[1]) + "\n";
+                    logStr += "video stride[2]: " + std::to_string(videoInfo.stride[2]) + "\n";
+                    debug_log(logStr.c_str());
+                }
                 gst_sample_unref(sample);
                 return GST_FLOW_OK;
             }
@@ -277,15 +375,52 @@ namespace
         }
     }
 
+    const char* GetAudioFormatName(const GstAudioFormat format)
+    {
+        static const char* names[] =
+        {
+            "GST_AUDIO_FORMAT_UNKNOWN",
+            "GST_AUDIO_FORMAT_ENCODED",
+            "GST_AUDIO_FORMAT_S8",
+            "GST_AUDIO_FORMAT_U8",
+            "GST_AUDIO_FORMAT_S16LE",
+            "GST_AUDIO_FORMAT_S16BE",
+            "GST_AUDIO_FORMAT_U16LE",
+            "GST_AUDIO_FORMAT_U16BE",
+            "GST_AUDIO_FORMAT_S24_32LE",
+            "GST_AUDIO_FORMAT_S24_32BE",
+            "GST_AUDIO_FORMAT_U24_32LE",
+            "GST_AUDIO_FORMAT_U24_32BE",
+            "GST_AUDIO_FORMAT_S32LE",
+            "GST_AUDIO_FORMAT_S32BE",
+            "GST_AUDIO_FORMAT_U32LE",
+            "GST_AUDIO_FORMAT_U32BE",
+            "GST_AUDIO_FORMAT_S24LE",
+            "GST_AUDIO_FORMAT_S24BE",
+            "GST_AUDIO_FORMAT_U24LE",
+            "GST_AUDIO_FORMAT_U24BE",
+            "GST_AUDIO_FORMAT_S20LE",
+            "GST_AUDIO_FORMAT_S20BE",
+            "GST_AUDIO_FORMAT_U20LE",
+            "GST_AUDIO_FORMAT_U20BE",
+            "GST_AUDIO_FORMAT_S18LE",
+            "GST_AUDIO_FORMAT_S18BE",
+            "GST_AUDIO_FORMAT_U18LE",
+            "GST_AUDIO_FORMAT_U18BE",
+            "GST_AUDIO_FORMAT_F32LE",
+            "GST_AUDIO_FORMAT_F32BE",
+            "GST_AUDIO_FORMAT_F64LE",
+            "GST_AUDIO_FORMAT_F64BE"
+        };
+
+        return names[format];
+    }
+
     GstFlowReturn NewAudioSampleCallback(GstAppSink *sink, gpointer p)
     {
         auto* data = reinterpret_cast<CustomData*>(p);
-
-        //std::cout << "hello new audio sample" << std::endl;
-        //debug_log("hello new audio sample");
-
-
         auto sample = gst_app_sink_pull_sample(sink);
+
         if(sample == nullptr)
         {
             return GST_FLOW_EOS;
@@ -303,22 +438,35 @@ namespace
                 return GST_FLOW_OK;
             }
 
-            //std::cout << "format: " << audioInfo.finfo->format << std::endl;
-            //std::cout << "channels: " << audioInfo.channels << std::endl;
-            //std::cout << "rate(frequency): " << audioInfo.rate << std::endl;
 
             //format check
             if(audioInfo.finfo->format != GST_AUDIO_FORMAT_F32LE)//this format is the default for autoaudiosink
             {
                 //error!
+                if(is_debug_log())
+                {
+                    std::string logStr = "Audio Format Error detected!\n";
+                    logStr += "audio format: ";
+                    logStr += GetAudioFormatName(audioInfo.finfo->format);
+                    logStr += "\n";
+                    debug_log(logStr.c_str());
+                }
+
                 gst_sample_unref(sample);
                 return GST_FLOW_OK;
             }
 
             //size check
-            if(data->Channels != audioInfo.channels)
+            if(data->Channels != audioInfo.channels || data->SampleRate != audioInfo.rate)
             {
                 //error!
+                if(is_debug_log())
+                {
+                    std::string logStr = "Video channel/samplerate Error detected!";
+                    logStr += "audio channel  : " + std::to_string(audioInfo.channels) + "\n";
+                    logStr += "audio rate     : " + std::to_string(audioInfo.rate) + "\n";
+                    debug_log(logStr.c_str());
+                }
                 gst_sample_unref(sample);
                 return GST_FLOW_OK;
             }
@@ -356,28 +504,10 @@ namespace
             return GST_FLOW_OK;
         }
     }
-
-    void RegisterError(const char* error1, const char* error2)
-    {
-        if(s_errorString) delete[] s_errorString;
-
-        s_errorString = new char[256];
-
-        snprintf(s_errorString, 256, "%s %s", error1, error2);
-    }
 }
 
 extern "C"
 {
-    UNITY_INTERFACE_EXPORT char* UNITY_INTERFACE_API GetLastErrorString()
-    {
-        auto str = new char[256];
-
-        snprintf(str, 256, "%s", s_errorString == nullptr ? "no error" : s_errorString);
-
-        return str;
-    }
-
 #ifdef _WINDOWS
     //called automatically by Unity
     UNITY_INTERFACE_EXPORT void UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
@@ -403,7 +533,6 @@ extern "C"
         if(instance == nullptr)
         {
             debug_log("couldn't get D3D11 instance\n");
-            std::cout << "couldn't get D3D11 instance" << std::endl;
             return false;
         }
         s_device = instance->GetDevice();
@@ -483,8 +612,6 @@ extern "C"
             errStr += err->message;
 
             debug_log(errStr.c_str());
-
-            RegisterError("gst_parse_launch failed:", err->message);
         }
         if(err != nullptr) g_error_free(err);
 
@@ -499,7 +626,6 @@ extern "C"
 
         if(data->Loop == nullptr)
         {
-            std::cout << "error!!!!: data->Loop is nullptr" << std::endl;
             delete data;
             return -1;
         }
@@ -556,7 +682,6 @@ extern "C"
         if(appVideoSink == nullptr && appAudioSink == nullptr)
         {
             debug_log("both appVideoSink and appAudioSink are not set\n");
-            RegisterError("both appVideoSink and appAudioSink are not set", "");
 
             delete data;
             return -1;
@@ -565,7 +690,6 @@ extern "C"
         {
             //sink exists but signal not available
             debug_log("appVideoSink exists but emit-signals is false\n");
-            RegisterError("appVideoSink exists but emit-signals is false", "");
 
             delete data;
             return -1;
@@ -574,7 +698,6 @@ extern "C"
         {
             //sink exists but signal not available
             debug_log("appAudioSink exists but emit-signals is false\n");
-            RegisterError("appAidopSink exists but emit-signals is false", "");
 
             delete data;
             return -1;
@@ -658,7 +781,6 @@ extern "C"
         //shutdown gstreamer
         //gst_deinit();//This occurs AddPipeline() errors after the second time of Initialize(), I'm guessing this function wasn't tested
 
-        if(s_errorString) delete[] s_errorString;
         s_Initialized = false;
 
         return true;
@@ -781,7 +903,7 @@ extern "C"
     }
 
 
-    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API SetAudioInfo(const int id, const int channels, const int maxBufferLength)
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API SetAudioInfo(const int id, const int channels, const int sampleRate, const int maxBufferLength)
     {
         if(!s_Initialized) return false;
 
@@ -792,6 +914,7 @@ extern "C"
             std::lock_guard<std::mutex> lock(data->AudioMutex);
 
             data->Channels = channels;
+            data->SampleRate = sampleRate;
             data->MaxAudioBufferLength = maxBufferLength;
         }
 
@@ -835,7 +958,6 @@ extern "C"
             data->AudioBuffer.erase(data->AudioBuffer.begin(), std::next(data->AudioBuffer.begin(), bufferLength));
 
             //std::cout << "length changed: " << before << " => " << data->AudioBuffer.size() << ", " << bufferLength << std::endl;
-
         }
 
         return true;

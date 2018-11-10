@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ヘッダー ファイル\Unity">
+      <UniqueIdentifier>{fac60c87-fa2b-4f4f-b3ad-a217a5aba4a4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -20,6 +23,24 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityGraphics.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityGraphicsD3D9.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityGraphicsD3D11.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityGraphicsD3D12.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityGraphicsMetal.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="Unity\IUnityInterface.h">
+      <Filter>ヘッダー ファイル\Unity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

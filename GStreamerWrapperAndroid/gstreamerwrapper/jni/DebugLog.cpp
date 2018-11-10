@@ -23,6 +23,11 @@ extern "C"
         if (debug_log_func != nullptr) debug_log_func(msg);
     }
 
+    bool is_debug_log()
+    {
+        return debug_log_func != nullptr;
+    }
+
     UNITY_INTERFACE_EXPORT void set_debug_log_func(debug_log_func_type func)
     {
         debug_log_func = func;
