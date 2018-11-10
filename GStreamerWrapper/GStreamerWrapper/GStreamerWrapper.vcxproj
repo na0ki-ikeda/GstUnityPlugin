@@ -155,9 +155,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="debug.cpp" />
+    <ClCompile Include="..\..\GStreamerWrapperAndroid\gstreamerwrapper\jni\DebugLog.cpp" />
+    <ClCompile Include="..\..\GStreamerWrapperAndroid\gstreamerwrapper\jni\GStreamerWrapper.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="GStreamerWrapper.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

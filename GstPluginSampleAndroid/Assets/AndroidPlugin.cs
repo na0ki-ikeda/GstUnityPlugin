@@ -4,42 +4,42 @@ using UnityEngine;
 
 public class AndroidPlugin : MonoBehaviour
 {
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     static extern int GetAndroidNumber();
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool Initialize();
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     static extern int AddPipeline(string description);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool SetVideoInfo(int id, int width, int height);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     static extern IntPtr GetTexturePtr(int id);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool Play(int id);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool Finalize();
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     public static extern IntPtr GetRenderEventFunc();
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool SetAudioInfo(int id, int channels, int maxBufferLength);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     static extern int GetAudioBufferLength(int id);
 
-    [DllImport("wrapper")]
+    [DllImport("GStreamerWrapper")]
     [return: MarshalAs(UnmanagedType.U1)]
     static extern bool GetAudioBuffer(int id, IntPtr buffer, int bufferLength);
 
@@ -64,10 +64,6 @@ public class AndroidPlugin : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        Debug.Log("from wrapper: " + GetAndroidNumber());
-        Debug.Log("hello from unity");
-        Debug.Log("from wrapper: " + GetAndroidNumber());
-
         using (AndroidJavaClass gstreamer = new AndroidJavaClass("org.freedesktop.gstreamer.GStreamer"))
         {
             AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");

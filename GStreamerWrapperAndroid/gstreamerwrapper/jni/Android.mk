@@ -2,8 +2,8 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := wrapper
-LOCAL_SRC_FILES := wrapper.cpp debug.cpp
+LOCAL_MODULE    := GStreamerWrapper
+LOCAL_SRC_FILES := GStreamerWrapper.cpp DebugLog.cpp
 LOCAL_SHARED_LIBRARIES := gstreamer_android
 LOCAL_LDLIBS := -llog -landroid -lGLESv1_CM -lGLESv2 #-lGLESv3
 include $(BUILD_SHARED_LIBRARY)
