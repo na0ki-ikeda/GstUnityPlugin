@@ -42,7 +42,7 @@ namespace GstPluginAndroid
 
             //マテリアルの設定
             GetComponent<Renderer>().material.mainTexture = texture_;
-            GetComponent<Renderer>().material.SetFloat("_TextureHeight", actualHeight);
+            GetComponent<Renderer>().material.SetFloat("_TextureHeight", height_);
 
             //クリップの作成
             clip_ = AudioClip.Create("clip", frequency_, channels_, frequency_, false);
@@ -51,11 +51,16 @@ namespace GstPluginAndroid
             //パイプライン作成
             //"uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! queue ! videoconvert ! appsink name=appVideoSink emit-signals=true !" +
             //"uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! queue ! audioconvert ! appsink name=appAudioSink emit-signals=true"
-            var video = string.Format("videotestsrc is-live=true ! video/x-raw,width={0},height={1} ! appsink name=appVideoSink emit-signals=true !", width_, height_);
+            var video = string.Format("videotestsrc is-live=true pattern=colors ! video/x-raw,width={0},height={1} ! appsink name=appVideoSink emit-signals=true !", width_, height_);
             var audio = string.Format("audiotestsrc is-live=true ! audio/x-raw,channels={0},format=F32LE ! appsink name=appAudioSink emit-signals=true", channels_);
 
             //パイプライン作成
             pipelineId_ = GStreamerWrapper.AddPipeline(video + audio);
+            if (pipelineId_ == 0)
+            {
+                Debug.LogWarning("AddPipeline() failed, did you set GStreamerManager.prefab in current scene?");
+                return;
+            }
 
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN
             //テクスチャのセット
