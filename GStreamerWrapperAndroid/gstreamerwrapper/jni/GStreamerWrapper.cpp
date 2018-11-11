@@ -462,7 +462,7 @@ namespace
                 //error!
                 if(is_debug_log())
                 {
-                    std::string logStr = "Video channel/samplerate Error detected!";
+                    std::string logStr = "Video channel/samplerate Error detected!\n";
                     logStr += "audio channel  : " + std::to_string(audioInfo.channels) + "\n";
                     logStr += "audio rate     : " + std::to_string(audioInfo.rate) + "\n";
                     debug_log(logStr.c_str());
