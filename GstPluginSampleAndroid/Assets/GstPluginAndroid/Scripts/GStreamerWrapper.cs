@@ -48,5 +48,9 @@ namespace GstPluginAndroid
         [DllImport("GStreamerWrapper")]
         [return: MarshalAs(UnmanagedType.U1)]
         public static extern bool GetAudioBuffer(int id, IntPtr buffer, int bufferLength);
+
+        [DllImport("GStreamerWrapper")]
+        [return: MarshalAs(UnmanagedType.U1)]
+        public static extern bool ShowAllGstElements();
     }
 }

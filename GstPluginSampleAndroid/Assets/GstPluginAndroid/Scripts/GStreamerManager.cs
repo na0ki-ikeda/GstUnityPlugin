@@ -30,6 +30,9 @@ namespace GstPluginAndroid
             //Initialize Gstreamer wrapper
             GStreamerWrapper.Initialize();
 
+            //Show all elements
+            //GStreamerWrapper.ShowAllGstElements();
+
             //start native render loop
             StartCoroutine(OnRender());
         }
