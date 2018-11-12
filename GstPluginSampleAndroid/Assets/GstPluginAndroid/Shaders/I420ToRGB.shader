@@ -46,14 +46,9 @@ Shader "Custom/I420ToRGB" {
                 // co-ordinate conversion algorithm for i420:
                 //    x /= 2.0; if modulo2(y) then x += width/2.0;
                 uv.x *= 0.5;
-/*
-                //TODO: buffer debug
-                if(fmod(uv.y * _TextureHeight, 2.0) >= 1.0)
-                {
-                    //uv.x += 0.5;
-                    //yuv.r = 1;
-                }
-*/
+                float oddeven = fmod(uv.y * _TextureHeight, 2.0);
+                uv.x = oddeven >= 1.0 ? uv.x + 0.5 : uv.x;
+
                 // lookup U
                 uv.y = 0.666667 + (uv.y * 0.25);//0.66.. = 2/3, 0.25 = 1/4
                 yuv.g = tex2D(_MainTex, uv.xy).a;
