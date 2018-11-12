@@ -962,4 +962,26 @@ extern "C"
 
         return true;
     }
+
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API ShowAllGstElements()
+    {  
+        auto elements = gst_element_factory_list_get_elements(GST_ELEMENT_FACTORY_TYPE_ANY, GST_RANK_NONE);
+           
+        for(auto l = elements; l; l = l->next)
+        {
+            auto f = reinterpret_cast<GstElementFactory*>(l->data);
+            //g_print("factory: %s\n", GST_OBJECT_NAME(f));
+
+            std::string errStr = "";
+            errStr += "Element: ";
+            errStr += GST_OBJECT_NAME(f);
+
+            debug_log(errStr.c_str());
+        }
+
+        gst_plugin_feature_list_free(elements);
+
+        return is_debug_log();
+    }
+
 }
