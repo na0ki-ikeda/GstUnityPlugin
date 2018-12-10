@@ -152,7 +152,19 @@ extern "C"
    
     bool Finalize();
 
+    bool IsErrorDetected(const int id);
+    bool CheckVideoAndSetFalse(const int id);
+    bool CheckAudioAndSetFalse(const int id);
+
     bool ShowAllGstElements();
+
+    using debug_log_func_type = void(*)(const char*);
+    void set_debug_log_func(debug_log_func_type func);
+
+    void log_func(const char* str)
+    {
+        std::cout << str << std::endl;
+    }
 }
 
 #include <thread>
@@ -166,22 +178,27 @@ void func2()
     //    "audiotestsrc is-live=true num-buffers=300 ! audio/x-raw,channels=2,format=F32LE ! appsink name=appAudioSink emit-signals=true"
     //);
 
-    auto id = AddPipeline(
-        "videotestsrc is-live=true ! video/x-raw,width=854,height=480 ! appsink name=appVideoSink emit-signals=true !"
-        "audiotestsrc is-live=true ! audio/x-raw,channels=2,format=F32LE ! appsink name=appAudioSink emit-signals=true"
-    );
-
-
     //auto id = AddPipeline(
-    //    "uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! videoconvert ! appsink name=appVideoSink emit-signals=true !"
-    //    "uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! audioconvert ! appsink name=appAudioSink emit-signals=true"
+    //    "videotestsrc is-live=true ! video/x-raw,width=854,height=480 ! appsink name=appVideoSink emit-signals=true !"
+    //    "audiotestsrc is-live=true ! audio/x-raw,channels=2,format=F32LE ! appsink name=appAudioSink emit-signals=true"
     //);
+
+
+    auto id = AddPipeline(
+        "uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! videoconvert ! appsink name=appVideoSink emit-signals=true !"
+        "uridecodebin uri=https://www.freedesktop.org/software/gstreamer-sdk/data/media/sintel_trailer-480p.webm ! audioconvert ! appsink name=appAudioSink emit-signals=true"
+    );
 
     //I420
     SetTexture(id, 854, 480 * 3 / 2, nullptr);
 
     //F32LE
-    SetAudioInfo(id, 2, 44100, 44100);
+    //SetAudioInfo(id, 2, 44100, 44100);
+    SetAudioInfo(id, 2, 48000, 48000);
+
+    //ログ有効
+    set_debug_log_func(log_func);
+
 
     Play(id);
 
@@ -196,10 +213,9 @@ void func2()
         for(;;)
         {
             auto check = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count();
-            if(check > 1000) break;
+            if(check > 20000) break;
 
             auto length = GetAudioBufferLength(id);
-
             if(length > 0)
             {
                 auto temp = new float[length];
@@ -225,6 +241,17 @@ void func2()
 
                 delete[] temp;
             }
+
+            auto errorDetected = IsErrorDetected(id);
+            if(errorDetected)
+            {
+                std::cout << "error detected!!" << std::endl;
+            }
+
+
+            std::cout << "video sample!: " << CheckVideoAndSetFalse(id) << std::endl;
+            std::cout << "audio sample!: " << CheckAudioAndSetFalse(id) << std::endl;
+
             std::this_thread::sleep_for(std::chrono::milliseconds(17));
         }
     });
@@ -270,7 +297,10 @@ void func3()
 
 void func4()
 {
-    Initialize();
+    //ログ有効
+    set_debug_log_func(log_func);
+
+    std::cout << "Initialized: " << Initialize() << std::endl;
     ShowAllGstElements();
 }
 
@@ -288,14 +318,14 @@ int main()
     //char* argv[] = { (char*)"GStreamerWrapperTest" };
     //func (1, (char**)&argv);
 
-    //func2();
+    func2();
     //func2();
     //func2();
     //func2();
 
     //func3();
 
-    func4();
+    //func4();
 
     return 0;
 }

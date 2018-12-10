@@ -50,6 +50,7 @@ namespace
         GMainLoop* Loop;
         bool Alive;
         GstState State;
+        bool ErrorDetected;
 
         //thread
         std::mutex VideoMutex;
@@ -65,12 +66,14 @@ namespace
         int Width;
         int Height;
         unsigned char* VideoBuffer;
+        bool VideoSampleAvailable;
 
         //audio
         std::vector<float> AudioBuffer;
         int Channels;
         int SampleRate;
         int MaxAudioBufferLength;
+        bool AudioSampleAvailable;
 
         CustomData()
         {
@@ -79,6 +82,8 @@ namespace
             Loop = nullptr;
             Alive = false;
             State = GST_STATE_NULL;
+            ErrorDetected = false;
+
             Thread = nullptr;
 #ifdef _WINDOWS
             Texture = nullptr;
@@ -87,9 +92,11 @@ namespace
 #endif
             Width = Height = 0;
             VideoBuffer = nullptr;
+            VideoSampleAvailable = false;
 
             Channels = SampleRate = 0;
             MaxAudioBufferLength = 0;
+            AudioSampleAvailable = false;
         }
         virtual ~CustomData() {}
     };
@@ -135,8 +142,9 @@ namespace
 
                 gst_message_parse_error(msg, &err, &debug);
 
-                debug_log("Error: ");
+                debug_log("Error detected!");
                 if(err != nullptr) debug_log(err->message);
+                data->ErrorDetected = true;
 
                 if(err != nullptr) g_error_free(err);
                 g_free(debug);
@@ -336,6 +344,7 @@ namespace
             auto buffer = gst_sample_get_buffer(sample);
             {
                 std::lock_guard<std::mutex> lock(data->VideoMutex);
+                data->VideoSampleAvailable = true;
 
                 GstMapInfo mapInfo;
                 if(gst_buffer_map(buffer, &mapInfo, GST_MAP_READ))
@@ -475,6 +484,7 @@ namespace
             auto buffer = gst_sample_get_buffer(sample);
             {
                 std::lock_guard<std::mutex> lock(data->AudioMutex);
+                data->AudioSampleAvailable = true;
 
                 GstMapInfo mapInfo;
                 if(gst_buffer_map(buffer, &mapInfo, GST_MAP_READ))
@@ -982,6 +992,50 @@ extern "C"
         gst_plugin_feature_list_free(elements);
 
         return is_debug_log();
+    }
+
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API IsErrorDetected(const int id)
+    {
+        if(!s_Initialized) return false;
+
+        auto data = GetCustomData(id);
+        if(data == nullptr) return false;
+
+        return data->ErrorDetected;
+    }
+
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API CheckVideoAndSetFalse(const int id)
+    {
+        if(!s_Initialized) return false;
+
+        auto data = GetCustomData(id);
+        if(data == nullptr) return false;
+
+        bool result = false;       
+        {
+            std::lock_guard<std::mutex> lock(data->VideoMutex);
+            result = data->VideoSampleAvailable;
+            data->VideoSampleAvailable = false;
+        }
+
+        return result;
+    }
+
+    UNITY_INTERFACE_EXPORT bool UNITY_INTERFACE_API CheckAudioAndSetFalse(const int id)
+    {
+        if(!s_Initialized) return false;
+
+        auto data = GetCustomData(id);
+        if(data == nullptr) return false;
+
+        bool result = false;
+        {
+            std::lock_guard<std::mutex> lock(data->AudioMutex);
+            result = data->AudioSampleAvailable;
+            data->AudioSampleAvailable = false;
+        }
+
+        return result;
     }
 
 }
